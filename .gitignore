@@ -1,0 +1,27 @@
+# Private working notes (not part of the public project)
+dev-notes/
+
+# Rust
+target/
+
+# Node / frontend
+node_modules/
+dist/
+.svelte-kit/
+
+# Tauri
+src-tauri/gen/
+
+# Scratch / throwaway screenshots (curated shots live in design-archive/)
+.scratch/
+
+# OS / editor noise
+Thumbs.db
+Desktop.ini
+*.log
+.vscode/
+.idea/
+
+# Env / secrets
+.env
+.env.*
