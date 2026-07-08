@@ -5,6 +5,8 @@
 **Super-resolution for your entire desktop.**
 *RESO·lution·NANCE — render beyond your panel, everywhere, not just in games.*
 
+### [→ Live site & interactive demo](https://nkvas1.github.io/Resonance/)
+
 [![Status](https://img.shields.io/badge/status-phase_5_·_release_prep-8A2BE2)](docs/ROADMAP.md)
 [![CI](https://github.com/nkVas1/Resonance/actions/workflows/ci.yml/badge.svg)](https://github.com/nkVas1/Resonance/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/platform-Windows_11-0078D6?logo=windows)](#requirements)
