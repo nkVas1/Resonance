@@ -9,15 +9,34 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust:
-    name: fmt · clippy · test
+  build:
+    name: fmt · clippy · test · build
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Chamber's `generate_context!` embeds the frontend at compile time,
+      # so the Svelte bundle must exist before any cargo command touches it.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/chamber/pnpm-lock.yaml
+      - name: Build frontend (Chamber)
+        working-directory: apps/chamber
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm check
+          pnpm build
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+
       - name: rustfmt
         run: cargo fmt --all --check
       - name: clippy
