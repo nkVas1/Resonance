@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = ["poc/drs-probe"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/nkVas1/Resonance"
+
+[profile.release]
+lto = true
+strip = true
