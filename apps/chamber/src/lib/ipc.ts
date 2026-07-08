@@ -20,6 +20,14 @@ export interface ProfileView {
   ratio: number;
 }
 
+export interface RuleView {
+  name: string;
+  trigger: string;
+  profile: string;
+  priority: number;
+  active: boolean;
+}
+
 export interface Snapshot {
   mode: ModeInfo;
   scale: number;
@@ -30,10 +38,24 @@ export interface Snapshot {
   monitor: string;
   confirmTimeout: number;
   profiles: ProfileView[];
+  automationEnabled: boolean;
+  activeCause: string | null;
+  pinned: string | null;
+  rules: RuleView[];
 }
 
 export interface RevertTick {
   remaining: number;
+}
+
+export type TriggerKind = "foreground" | "running" | "power";
+
+export interface NewRule {
+  name: string;
+  kind: TriggerKind;
+  value: string;
+  profile: string;
+  priority: number;
 }
 
 export const ipc = {
@@ -41,6 +63,10 @@ export const ipc = {
   applyProfile: (name: string) => invoke<Snapshot>("apply_profile", { name }),
   confirm: () => invoke<Snapshot>("confirm_state"),
   revert: () => invoke<Snapshot>("revert_now"),
+  resumeAutomation: () => invoke<Snapshot>("resume_automation"),
+  setAutomation: (enabled: boolean) => invoke<Snapshot>("set_automation", { enabled }),
+  addRule: (rule: NewRule) => invoke<Snapshot>("add_rule", { rule }),
+  removeRule: (name: string) => invoke<Snapshot>("remove_rule", { name }),
 
   onSnapshot: (cb: (s: Snapshot) => void): Promise<UnlistenFn> =>
     listen<Snapshot>("snapshot", (e) => cb(e.payload)),

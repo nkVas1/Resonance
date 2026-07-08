@@ -14,6 +14,9 @@ pub struct Config {
     pub confirm_timeout_s: u32,
     #[serde(default)]
     pub profiles: Vec<Profile>,
+    /// Master switch for rule-based automation (manual pins still apply).
+    #[serde(default)]
+    pub automation_enabled: bool,
     /// Automation rules (evaluated by the conductor). Empty by default.
     #[serde(default)]
     pub rules: Vec<Rule>,
@@ -50,6 +53,7 @@ impl Config {
                     scale: Some(200),
                 },
             ],
+            automation_enabled: false,
             rules: Vec::new(),
         }
     }
@@ -89,6 +93,41 @@ impl Config {
         self.profiles
             .iter()
             .find(|p| p.name.eq_ignore_ascii_case(name))
+    }
+
+    /// Add a rule (replacing any existing rule of the same name) and persist.
+    pub fn upsert_rule(&mut self, rule: Rule) -> Result<(), String> {
+        if self.profile(&rule.profile).is_none() {
+            return Err(format!(
+                "rule references unknown profile '{}'",
+                rule.profile
+            ));
+        }
+        match self
+            .rules
+            .iter_mut()
+            .find(|r| r.name.eq_ignore_ascii_case(&rule.name))
+        {
+            Some(existing) => *existing = rule,
+            None => self.rules.push(rule),
+        }
+        self.save()
+    }
+
+    /// Remove a rule by name and persist. Returns whether one was removed.
+    pub fn remove_rule(&mut self, name: &str) -> Result<bool, String> {
+        let before = self.rules.len();
+        self.rules.retain(|r| !r.name.eq_ignore_ascii_case(name));
+        let removed = self.rules.len() != before;
+        if removed {
+            self.save()?;
+        }
+        Ok(removed)
+    }
+
+    pub fn set_automation(&mut self, enabled: bool) -> Result<(), String> {
+        self.automation_enabled = enabled;
+        self.save()
     }
 }
 
