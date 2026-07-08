@@ -7,12 +7,14 @@
     ontoggle,
     onaddrule,
     onremoverule,
+    onautostart,
   }: {
     snap: Snapshot;
     busy: boolean;
     ontoggle: (enabled: boolean) => void;
     onaddrule: (rule: NewRule) => void;
     onremoverule: (name: string) => void;
+    onautostart: (enabled: boolean) => void;
   } = $props();
 
   let adding = $state(false);
@@ -135,6 +137,24 @@
   {:else}
     <button class="add-btn" disabled={busy} onclick={() => (adding = true)}>+ New rule</button>
   {/if}
+
+  <div class="startup">
+    <div>
+      <span class="startup-title">Start with Windows</span>
+      <p class="sub">Launch to the tray automatically at login</p>
+    </div>
+    <button
+      class="switch"
+      class:on={snap.autostartEnabled}
+      role="switch"
+      aria-label="Start with Windows"
+      aria-checked={snap.autostartEnabled}
+      disabled={busy}
+      onclick={() => onautostart(!snap.autostartEnabled)}
+    >
+      <span class="dot"></span>
+    </button>
+  </div>
 </div>
 
 <style>
@@ -406,5 +426,20 @@
 
   .cancel:hover {
     color: var(--text);
+  }
+
+  .startup {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  .startup-title {
+    font-size: 0.9rem;
+    font-weight: 550;
   }
 </style>

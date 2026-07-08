@@ -7,7 +7,7 @@
 
 ### [→ Live site & interactive demo](https://nkvas1.github.io/Resonance/)
 
-[![Status](https://img.shields.io/badge/status-phase_5_·_release_prep-8A2BE2)](docs/ROADMAP.md)
+[![Download](https://img.shields.io/github/v/release/nkVas1/Resonance?label=download&color=7c5cff)](https://github.com/nkVas1/Resonance/releases/latest)
 [![CI](https://github.com/nkVas1/Resonance/actions/workflows/ci.yml/badge.svg)](https://github.com/nkVas1/Resonance/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/platform-Windows_11-0078D6?logo=windows)](#requirements)
 [![Stack](https://img.shields.io/badge/stack-Rust_·_Tauri_2_·_Svelte_5-FF6B35)](docs/adr/0002-tech-stack.md)
@@ -75,9 +75,15 @@ Deep dive: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **[Magpie](https://github.com/Blinue/Magpie)** and **Lossless Scaling** upscale *a single window* via capture — great for games, but they don't (and can't) raise the real desktop resolution system-wide.
 - Resonance is **driver-first**: the OS genuinely renders more pixels, so *everything* benefits natively — no capture overhead, no cursor quirks, no per-window setup. Rationale: [ADR-0001](docs/adr/0001-driver-first-super-resolution.md).
 
-## Quick start
+## Download
 
-No signed release yet — build from source (a few minutes):
+**[⬇ Download the latest installer](https://github.com/nkVas1/Resonance/releases/latest)** — `Resonance_x.y.z_x64-setup.exe` (~3 MB, Windows 11).
+
+Run it, and Resonance installs to your user profile with a Start-menu shortcut. First launch opens the control center; enable **Start with Windows** (Automation tab or tray menu) to have it wake into the tray at login. No admin rights, no account, no telemetry.
+
+> The installer is unsigned (no paid code-signing certificate yet), so Windows SmartScreen may show a "more info → run anyway" prompt on first launch. The source is right here if you'd rather build it yourself.
+
+## Build from source
 
 ```bash
 git clone https://github.com/nkVas1/Resonance
@@ -87,7 +93,7 @@ cd Resonance
 cargo run -p resctl -- doctor
 cargo run -p resctl -- apply fifth      # 1.5× supersampled desktop, auto-reverts if unconfirmed
 
-# Build the desktop app (Chamber)
+# Build the desktop app (Chamber) — produces the installer
 cd apps/chamber
 pnpm install
 pnpm tauri build                        # -> target/release/bundle/nsis/Resonance_*-setup.exe

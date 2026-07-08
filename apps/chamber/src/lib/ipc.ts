@@ -39,6 +39,7 @@ export interface Snapshot {
   vendor: string;
   enableHint: string | null;
   confirmTimeout: number;
+  autostartEnabled: boolean;
   profiles: ProfileView[];
   automationEnabled: boolean;
   activeCause: string | null;
@@ -67,6 +68,7 @@ export const ipc = {
   revert: () => invoke<Snapshot>("revert_now"),
   resumeAutomation: () => invoke<Snapshot>("resume_automation"),
   setAutomation: (enabled: boolean) => invoke<Snapshot>("set_automation", { enabled }),
+  setAutostart: (enabled: boolean) => invoke<Snapshot>("set_autostart", { enabled }),
   addRule: (rule: NewRule) => invoke<Snapshot>("add_rule", { rule }),
   removeRule: (name: string) => invoke<Snapshot>("remove_rule", { name }),
 

@@ -3,5 +3,12 @@
   "identifier": "default",
   "description": "Chamber main window capabilities",
   "windows": ["main"],
-  "permissions": ["core:default", "global-shortcut:allow-register", "global-shortcut:allow-unregister"]
+  "permissions": [
+    "core:default",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
+  ]
 }

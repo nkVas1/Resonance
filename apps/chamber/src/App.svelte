@@ -119,6 +119,7 @@
           ontoggle={(en) => run(() => ipc.setAutomation(en))}
           onaddrule={(r) => run(() => ipc.addRule(r))}
           onremoverule={(n) => run(() => ipc.removeRule(n))}
+          onautostart={(en) => run(() => ipc.setAutostart(en))}
         />
       </div>
     {/if}

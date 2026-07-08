@@ -8,9 +8,10 @@ use resonance_core::rules::PowerSource;
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_autostart::ManagerExt;
 
 // ---------- view models (serialized to the UI) ----------
 
@@ -67,6 +68,7 @@ struct Snapshot {
     /// Set only when no above-native modes exist: how to enable them for this GPU.
     enable_hint: Option<String>,
     confirm_timeout: u32,
+    autostart_enabled: bool,
     profiles: Vec<ProfileView>,
     automation_enabled: bool,
     /// Human-readable reason the current profile is active, e.g.
@@ -213,6 +215,7 @@ fn build_snapshot(app: &AppHandle) -> Result<Snapshot, String> {
         vendor: vendor.name().to_string(),
         enable_hint,
         confirm_timeout: config.confirm_timeout_s,
+        autostart_enabled: app.autolaunch().is_enabled().unwrap_or(false),
         profiles,
         automation_enabled: config.automation_enabled,
         active_cause: cause,
@@ -395,6 +398,22 @@ fn set_automation(app: AppHandle, enabled: bool) -> Result<Snapshot, String> {
     build_snapshot(&app)
 }
 
+#[tauri::command]
+fn set_autostart(app: AppHandle, enabled: bool) -> Result<Snapshot, String> {
+    let manager = app.autolaunch();
+    if enabled {
+        manager
+            .enable()
+            .map_err(|e| format!("enable autostart: {e}"))?;
+    } else {
+        manager
+            .disable()
+            .map_err(|e| format!("disable autostart: {e}"))?;
+    }
+    broadcast(&app);
+    build_snapshot(&app)
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct NewRule {
@@ -493,6 +512,15 @@ fn show_main_window(app: &AppHandle) {
 fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "Open Resonance", true, None::<&str>)?;
     let native = MenuItem::with_id(app, "native", "Back to native", true, None::<&str>)?;
+    let autostart_on = app.autolaunch().is_enabled().unwrap_or(false);
+    let autostart = CheckMenuItem::with_id(
+        app,
+        "autostart",
+        "Start with Windows",
+        true,
+        autostart_on,
+        None::<&str>,
+    )?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
     let mut items: Vec<Box<dyn tauri::menu::IsMenuItem<tauri::Wry>>> = vec![
@@ -515,6 +543,7 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     }
     items.push(Box::new(PredefinedMenuItem::separator(app)?));
     items.push(Box::new(native));
+    items.push(Box::new(autostart));
     items.push(Box::new(quit));
 
     let refs: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> =
@@ -532,8 +561,11 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
                 "open" => show_main_window(app),
                 "quit" => app.exit(0),
                 "native" => {
-                    let app = app.clone();
-                    let _ = resume_automation(app);
+                    let _ = resume_automation(app.clone());
+                }
+                "autostart" => {
+                    let enable = !app.autolaunch().is_enabled().unwrap_or(false);
+                    let _ = set_autostart(app.clone(), enable);
                 }
                 other => {
                     if let Some(name) = other.strip_prefix("profile:") {
@@ -618,6 +650,11 @@ pub fn run() {
             show_main_window(app);
         }))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            // Passed on OS-triggered launch so we can start silently in the tray.
+            Some(vec!["--minimized"]),
+        ))
         .manage(GuardTimer::default())
         .manage(Coordinator::default())
         .setup(|app| {
@@ -629,6 +666,12 @@ pub fn run() {
                     .lock()
                     .expect("engine lock")
                     .set_enabled(config.automation_enabled);
+            }
+            // Launched at login → stay in the tray instead of popping the window.
+            if std::env::args().any(|a| a == "--minimized") {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
             }
             build_tray(app)?;
             register_hotkeys(&handle);
@@ -642,6 +685,7 @@ pub fn run() {
             confirm_state,
             revert_now,
             set_automation,
+            set_autostart,
             add_rule,
             remove_rule
         ])
