@@ -1,0 +1,11 @@
+[package]
+name = "resonance-core"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Resonance domain model: profiles, config store, revert guard"
+
+[dependencies]
+serde.workspace = true
+toml.workspace = true

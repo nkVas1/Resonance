@@ -1,11 +1,24 @@
 [workspace]
 resolver = "2"
-members = ["poc/drs-probe"]
+members = [
+    "crates/resonance-core",
+    "crates/tuner",
+    "crates/conductor",
+    "apps/resctl",
+    "poc/drs-probe",
+]
 
 [workspace.package]
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/nkVas1/Resonance"
+
+[workspace.dependencies]
+resonance-core = { path = "crates/resonance-core" }
+tuner = { path = "crates/tuner" }
+conductor = { path = "crates/conductor" }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
 
 [profile.release]
 lto = true

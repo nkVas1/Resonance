@@ -91,7 +91,8 @@ pub struct NvApi {
     drs_load_settings: unsafe extern "C" fn(DrsSession) -> NvStatus,
     drs_save_settings: unsafe extern "C" fn(DrsSession) -> NvStatus,
     drs_get_base_profile: unsafe extern "C" fn(DrsSession, *mut DrsProfile) -> NvStatus,
-    drs_get_setting: unsafe extern "C" fn(DrsSession, DrsProfile, u32, *mut NvdrsSetting) -> NvStatus,
+    drs_get_setting:
+        unsafe extern "C" fn(DrsSession, DrsProfile, u32, *mut NvdrsSetting) -> NvStatus,
     drs_set_setting: unsafe extern "C" fn(DrsSession, DrsProfile, *mut NvdrsSetting) -> NvStatus,
     drs_enum_available_setting_ids: unsafe extern "C" fn(*mut u32, *mut u32) -> NvStatus,
     drs_get_setting_name_from_id: unsafe extern "C" fn(u32, *mut [u16; 2048]) -> NvStatus,
@@ -118,7 +119,9 @@ impl NvApi {
                 ptr = unsafe { qi(fallback) };
             }
             if ptr.is_null() {
-                Err(format!("NVAPI function {name} (0x{primary:08X}) unavailable in this driver"))
+                Err(format!(
+                    "NVAPI function {name} (0x{primary:08X}) unavailable in this driver"
+                ))
             } else {
                 Ok(ptr)
             }
@@ -141,14 +144,25 @@ impl NvApi {
             drs_get_base_profile: get!("DRS_GetBaseProfile", 0xDA8466A0, 0),
             drs_get_setting: get!("DRS_GetSetting", 0x73BF8338, 0xEA99498D),
             drs_set_setting: get!("DRS_SetSetting", 0x577DD202, 0x8A2CF5F5),
-            drs_enum_available_setting_ids: get!("DRS_EnumAvailableSettingIds", 0xF020614A, 0xE5DE48E5),
+            drs_enum_available_setting_ids: get!(
+                "DRS_EnumAvailableSettingIds",
+                0xF020614A,
+                0xE5DE48E5
+            ),
             drs_get_setting_name_from_id: get!("DRS_GetSettingNameFromId", 0xD61CBE6E, 0x1EB13791),
-            drs_enum_available_setting_values: get!("DRS_EnumAvailableSettingValues", 0x2EC39F90, 0),
+            drs_enum_available_setting_values: get!(
+                "DRS_EnumAvailableSettingValues",
+                0x2EC39F90,
+                0
+            ),
         };
 
         let status = unsafe { (api.initialize)() };
         if status != NVAPI_OK {
-            return Err(format!("NvAPI_Initialize failed: {}", api.error_message(status)));
+            return Err(format!(
+                "NvAPI_Initialize failed: {}",
+                api.error_message(status)
+            ));
         }
         Ok(api)
     }
@@ -180,7 +194,12 @@ impl NvApi {
     pub fn available_settings(&self) -> Result<Vec<(u32, String)>, String> {
         let mut ids = vec![0u32; 2048];
         let mut count = ids.len() as u32;
-        nv_call!(self, self.drs_enum_available_setting_ids, ids.as_mut_ptr(), &mut count)?;
+        nv_call!(
+            self,
+            self.drs_enum_available_setting_ids,
+            ids.as_mut_ptr(),
+            &mut count
+        )?;
         ids.truncate(count as usize);
 
         let mut out = Vec::with_capacity(ids.len());
@@ -204,10 +223,23 @@ impl NvApi {
         let mut values: Box<NvdrsSettingValues> = boxed_zeroed();
         values.version = nvapi_version::<NvdrsSettingValues>();
         let mut max = 100u32;
-        nv_call!(self, self.drs_enum_available_setting_values, id, &mut max, &mut *values)?;
+        nv_call!(
+            self,
+            self.drs_enum_available_setting_values,
+            id,
+            &mut max,
+            &mut *values
+        )?;
         let n = (values.num_setting_values as usize).min(100);
-        let list = values.setting_values[..n].iter().map(|b| u32_from_blob(b)).collect();
-        Ok((values.setting_type, u32_from_blob(&values.default_value), list))
+        let list = values.setting_values[..n]
+            .iter()
+            .map(|b| u32_from_blob(b))
+            .collect();
+        Ok((
+            values.setting_type,
+            u32_from_blob(&values.default_value),
+            list,
+        ))
     }
 
     /// Current DWORD value of a setting in the given profile, if present.
@@ -223,7 +255,10 @@ impl NvApi {
         match status {
             NVAPI_OK => Ok(Some(u32_from_blob(&setting.current))),
             -160 => Ok(None), // NVAPI_SETTING_NOT_FOUND
-            other => Err(format!("DRS_GetSetting(0x{id:08X}): {}", self.error_message(other))),
+            other => Err(format!(
+                "DRS_GetSetting(0x{id:08X}): {}",
+                self.error_message(other)
+            )),
         }
     }
 

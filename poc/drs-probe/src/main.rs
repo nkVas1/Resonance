@@ -1,4 +1,5 @@
 //! drs-probe — Resonance Phase 0 proof-of-concept.
+#![allow(clippy::missing_transmute_annotations, clippy::manual_c_str_literals)]
 //!
 //! Commands:
 //!   dump                       list every driver setting id+name, flag DSR-related, show values
@@ -23,7 +24,9 @@ fn main() {
         "inspect" => hex_arg(&args, 1).and_then(cmd_inspect),
         "set" => hex_arg(&args, 1).and_then(|id| hex_arg(&args, 2).and_then(|v| cmd_set(id, v))),
         "modes" => cmd_modes(),
-        "switch" => num_arg(&args, 1).and_then(|w| num_arg(&args, 2).and_then(|h| cmd_switch(w, h))),
+        "switch" => {
+            num_arg(&args, 1).and_then(|w| num_arg(&args, 2).and_then(|h| cmd_switch(w, h)))
+        }
         "dpi-raw" => {
             let n = num_arg(&args, 1).unwrap_or(3) as usize;
             display::dpi_get_raw(n).map(|vals| {
@@ -34,12 +37,14 @@ fn main() {
         }
         "dpi" => match num_arg(&args, 1) {
             Ok(p) => display::dpi_set(p).map(|()| println!("scale set to {p}%")),
-            Err(_) => display::dpi_get().map(|(min, cur, max)| println!("scale: {cur}% (min {min}%, max {max}%)")),
+            Err(_) => display::dpi_get()
+                .map(|(min, cur, max)| println!("scale: {cur}% (min {min}%, max {max}%)")),
         },
         "cycle" => {
             let hold = num_arg(&args, 4).unwrap_or(8);
             num_arg(&args, 1).and_then(|w| {
-                num_arg(&args, 2).and_then(|h| num_arg(&args, 3).and_then(|d| cmd_cycle(w, h, d, hold)))
+                num_arg(&args, 2)
+                    .and_then(|h| num_arg(&args, 3).and_then(|d| cmd_cycle(w, h, d, hold)))
             })
         }
         _ => {
@@ -55,7 +60,8 @@ fn main() {
 
 fn hex_arg(args: &[String], i: usize) -> Result<u32, String> {
     let raw = args.get(i).ok_or(format!("missing argument #{i}"))?;
-    u32::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|e| format!("bad hex '{raw}': {e}"))
+    u32::from_str_radix(raw.trim_start_matches("0x"), 16)
+        .map_err(|e| format!("bad hex '{raw}': {e}"))
 }
 
 fn num_arg(args: &[String], i: usize) -> Result<u32, String> {
@@ -65,7 +71,10 @@ fn num_arg(args: &[String], i: usize) -> Result<u32, String> {
 
 fn looks_dsr(name: &str) -> bool {
     let n = name.to_ascii_lowercase();
-    n.contains("dsr") || n.contains("super resolution") || n.contains("smooth scaling") || n.contains("hyperscaling")
+    n.contains("dsr")
+        || n.contains("super resolution")
+        || n.contains("smooth scaling")
+        || n.contains("hyperscaling")
 }
 
 fn cmd_dump() -> Result<(), String> {
@@ -128,19 +137,29 @@ fn cmd_set(id: u32, value: u32) -> Result<(), String> {
     api.with_base_profile(|api, session, profile| {
         let before = api.get_dword(session, profile, id)?;
         api.set_dword(session, profile, id, value)?;
-        println!("0x{id:08X}: {:?} -> 0x{value:08X} (saved)", before.map(|v| format!("0x{v:08X}")));
+        println!(
+            "0x{id:08X}: {:?} -> 0x{value:08X} (saved)",
+            before.map(|v| format!("0x{v:08X}"))
+        );
         Ok(())
     })
 }
 
 fn cmd_modes() -> Result<(), String> {
     let native = display::current_mode()?;
-    println!("current: {}x{} @{}Hz\n", native.width, native.height, native.hz);
+    println!(
+        "current: {}x{} @{}Hz\n",
+        native.width, native.height, native.hz
+    );
     for m in display::list_modes() {
         if m.bpp != 32 {
             continue;
         }
-        let above = if m.width > native.width || m.height > native.height { "  <-- ABOVE NATIVE" } else { "" };
+        let above = if m.width > native.width || m.height > native.height {
+            "  <-- ABOVE NATIVE"
+        } else {
+            ""
+        };
         println!("{:>5}x{:<5} @{:>3}Hz{above}", m.width, m.height, m.hz);
     }
     Ok(())
@@ -148,17 +167,26 @@ fn cmd_modes() -> Result<(), String> {
 
 fn cmd_switch(w: u32, h: u32) -> Result<(), String> {
     let picked = display::switch_mode(w, h)?;
-    println!("switched to {}x{} @{}Hz (dynamic, not persisted)", picked.width, picked.height, picked.hz);
+    println!(
+        "switched to {}x{} @{}Hz (dynamic, not persisted)",
+        picked.width, picked.height, picked.hz
+    );
     Ok(())
 }
 
 fn cmd_cycle(w: u32, h: u32, dpi: u32, hold_s: u32) -> Result<(), String> {
     let original = display::current_mode()?;
     let (_, original_dpi, _) = display::dpi_get()?;
-    println!("original: {}x{} @{}Hz, scale {original_dpi}%", original.width, original.height, original.hz);
+    println!(
+        "original: {}x{} @{}Hz, scale {original_dpi}%",
+        original.width, original.height, original.hz
+    );
 
     let picked = display::switch_mode(w, h)?;
-    println!("switched: {}x{} @{}Hz", picked.width, picked.height, picked.hz);
+    println!(
+        "switched: {}x{} @{}Hz",
+        picked.width, picked.height, picked.hz
+    );
     if let Err(e) = display::dpi_set(dpi) {
         eprintln!("dpi set failed ({e}) — continuing, will still revert");
     } else {
@@ -174,6 +202,9 @@ fn cmd_cycle(w: u32, h: u32, dpi: u32, hold_s: u32) -> Result<(), String> {
 
     display::switch_mode(original.width, original.height)?;
     display::dpi_set(original_dpi)?;
-    println!("reverted to {}x{} @{}Hz, scale {original_dpi}%", original.width, original.height, original.hz);
+    println!(
+        "reverted to {}x{} @{}Hz, scale {original_dpi}%",
+        original.width, original.height, original.hz
+    );
     Ok(())
 }

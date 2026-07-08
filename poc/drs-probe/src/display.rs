@@ -126,17 +126,40 @@ struct Point {
 
 #[link(name = "shcore")]
 extern "system" {
-    fn GetDpiForMonitor(hmonitor: *mut c_void, dpi_type: u32, dpi_x: *mut u32, dpi_y: *mut u32) -> i32;
+    fn GetDpiForMonitor(
+        hmonitor: *mut c_void,
+        dpi_type: u32,
+        dpi_x: *mut u32,
+        dpi_y: *mut u32,
+    ) -> i32;
 }
 
 #[link(name = "user32")]
 extern "system" {
     fn SetProcessDpiAwarenessContext(context: isize) -> i32;
     fn MonitorFromPoint(pt: Point, flags: u32) -> *mut c_void;
-    fn EnumDisplaySettingsExW(device: *const u16, mode_num: u32, devmode: *mut DevModeW, flags: u32) -> i32;
-    fn ChangeDisplaySettingsExW(device: *const u16, devmode: *mut DevModeW, hwnd: *mut c_void, flags: u32, param: *mut c_void) -> i32;
+    fn EnumDisplaySettingsExW(
+        device: *const u16,
+        mode_num: u32,
+        devmode: *mut DevModeW,
+        flags: u32,
+    ) -> i32;
+    fn ChangeDisplaySettingsExW(
+        device: *const u16,
+        devmode: *mut DevModeW,
+        hwnd: *mut c_void,
+        flags: u32,
+        param: *mut c_void,
+    ) -> i32;
     fn GetDisplayConfigBufferSizes(flags: u32, num_paths: *mut u32, num_modes: *mut u32) -> i32;
-    fn QueryDisplayConfig(flags: u32, num_paths: *mut u32, paths: *mut PathInfo, num_modes: *mut u32, modes: *mut ModeInfo, topology: *mut u32) -> i32;
+    fn QueryDisplayConfig(
+        flags: u32,
+        num_paths: *mut u32,
+        paths: *mut PathInfo,
+        num_modes: *mut u32,
+        modes: *mut ModeInfo,
+        topology: *mut u32,
+    ) -> i32;
     fn DisplayConfigGetDeviceInfo(packet: *mut c_void) -> i32;
     fn DisplayConfigSetDeviceInfo(packet: *mut c_void) -> i32;
 }
@@ -160,7 +183,12 @@ pub fn current_mode() -> Result<Mode, String> {
     if unsafe { EnumDisplaySettingsExW(std::ptr::null(), ENUM_CURRENT_SETTINGS, &mut dm, 0) } == 0 {
         return Err("EnumDisplaySettingsExW(current) failed".into());
     }
-    Ok(Mode { width: dm.dm_pels_width, height: dm.dm_pels_height, hz: dm.dm_display_frequency, bpp: dm.dm_bits_per_pel })
+    Ok(Mode {
+        width: dm.dm_pels_width,
+        height: dm.dm_pels_height,
+        hz: dm.dm_display_frequency,
+        bpp: dm.dm_bits_per_pel,
+    })
 }
 
 pub fn list_modes() -> Vec<Mode> {
@@ -171,7 +199,12 @@ pub fn list_modes() -> Vec<Mode> {
         if unsafe { EnumDisplaySettingsExW(std::ptr::null(), i, &mut dm, 0) } == 0 {
             break;
         }
-        modes.push(Mode { width: dm.dm_pels_width, height: dm.dm_pels_height, hz: dm.dm_display_frequency, bpp: dm.dm_bits_per_pel });
+        modes.push(Mode {
+            width: dm.dm_pels_width,
+            height: dm.dm_pels_height,
+            hz: dm.dm_display_frequency,
+            bpp: dm.dm_bits_per_pel,
+        });
         i += 1;
     }
     modes.sort_by_key(|m| (m.width, m.height, m.hz));
@@ -199,7 +232,13 @@ pub fn switch_mode(width: u32, height: u32) -> Result<Mode, String> {
     dm.dm_fields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
 
     let rc = unsafe {
-        ChangeDisplaySettingsExW(std::ptr::null(), &mut dm, std::ptr::null_mut(), 0, std::ptr::null_mut())
+        ChangeDisplaySettingsExW(
+            std::ptr::null(),
+            &mut dm,
+            std::ptr::null_mut(),
+            0,
+            std::ptr::null_mut(),
+        )
     };
     if rc != DISP_CHANGE_SUCCESSFUL {
         return Err(format!("ChangeDisplaySettingsExW -> {rc}"));
@@ -211,13 +250,22 @@ pub fn switch_mode(width: u32, height: u32) -> Result<Mode, String> {
 fn primary_source() -> Result<(Luid, u32), String> {
     let mut n_paths = 0u32;
     let mut n_modes = 0u32;
-    if unsafe { GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &mut n_paths, &mut n_modes) } != 0 {
+    if unsafe { GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &mut n_paths, &mut n_modes) }
+        != 0
+    {
         return Err("GetDisplayConfigBufferSizes failed".into());
     }
     let mut paths: Vec<PathInfo> = Vec::with_capacity(n_paths as usize);
     let mut modes: Vec<ModeInfo> = Vec::with_capacity(n_modes as usize);
     let rc = unsafe {
-        QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &mut n_paths, paths.as_mut_ptr(), &mut n_modes, modes.as_mut_ptr(), std::ptr::null_mut())
+        QueryDisplayConfig(
+            QDC_ONLY_ACTIVE_PATHS,
+            &mut n_paths,
+            paths.as_mut_ptr(),
+            &mut n_modes,
+            modes.as_mut_ptr(),
+            std::ptr::null_mut(),
+        )
     };
     if rc != 0 {
         return Err(format!("QueryDisplayConfig -> {rc}"));
@@ -248,7 +296,10 @@ pub fn dpi_get_raw(payload_dwords: usize) -> Result<Vec<i32>, String> {
     };
     let rc = unsafe { DisplayConfigGetDeviceInfo(&mut pkt as *mut _ as *mut c_void) };
     if rc != 0 {
-        return Err(format!("DisplayConfigGetDeviceInfo(DPI, size={}) -> {rc}", pkt.header.size));
+        return Err(format!(
+            "DisplayConfigGetDeviceInfo(DPI, size={}) -> {rc}",
+            pkt.header.size
+        ));
     }
     Ok(pkt.vals[..n].to_vec())
 }
@@ -279,7 +330,12 @@ pub fn current_scale() -> Result<u32, String> {
 pub fn dpi_get() -> Result<(u32, u32, u32), String> {
     let (adapter, id) = primary_source()?;
     let mut pkt = DpiGetPacket {
-        header: DeviceInfoHeader { info_type: DPI_GET, size: std::mem::size_of::<DpiGetPacket>() as u32, adapter_id: adapter, id },
+        header: DeviceInfoHeader {
+            info_type: DPI_GET,
+            size: std::mem::size_of::<DpiGetPacket>() as u32,
+            adapter_id: adapter,
+            id,
+        },
         min_rel: 0,
         cur_rel: 0,
         max_rel: 0,
@@ -297,14 +353,18 @@ pub fn dpi_get() -> Result<(u32, u32, u32), String> {
 }
 
 pub fn dpi_set(percent: u32) -> Result<(), String> {
-    let target_idx = DPI_STEPS
-        .iter()
-        .position(|&s| s == percent)
-        .ok_or(format!("unsupported scale {percent}% (valid: {DPI_STEPS:?})"))? as i32;
+    let target_idx = DPI_STEPS.iter().position(|&s| s == percent).ok_or(format!(
+        "unsupported scale {percent}% (valid: {DPI_STEPS:?})"
+    ))? as i32;
 
     let (adapter, id) = primary_source()?;
     let mut probe = DpiGetPacket {
-        header: DeviceInfoHeader { info_type: DPI_GET, size: std::mem::size_of::<DpiGetPacket>() as u32, adapter_id: adapter, id },
+        header: DeviceInfoHeader {
+            info_type: DPI_GET,
+            size: std::mem::size_of::<DpiGetPacket>() as u32,
+            adapter_id: adapter,
+            id,
+        },
         min_rel: 0,
         cur_rel: 0,
         max_rel: 0,
@@ -316,7 +376,12 @@ pub fn dpi_set(percent: u32) -> Result<(), String> {
     let rel = (target_idx - recommended).clamp(probe.min_rel, probe.max_rel);
 
     let mut pkt = DpiSetPacket {
-        header: DeviceInfoHeader { info_type: DPI_SET, size: std::mem::size_of::<DpiSetPacket>() as u32, adapter_id: adapter, id },
+        header: DeviceInfoHeader {
+            info_type: DPI_SET,
+            size: std::mem::size_of::<DpiSetPacket>() as u32,
+            adapter_id: adapter,
+            id,
+        },
         rel,
     };
     let rc = unsafe { DisplayConfigSetDeviceInfo(&mut pkt as *mut _ as *mut c_void) };
@@ -331,7 +396,10 @@ pub fn dpi_set(percent: u32) -> Result<(), String> {
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
-        return Err(format!("DPI write did not stick (wanted {percent}%, still {}%)", current_scale()?));
+        return Err(format!(
+            "DPI write did not stick (wanted {percent}%, still {}%)",
+            current_scale()?
+        ));
     }
     Ok(())
 }

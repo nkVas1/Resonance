@@ -1,0 +1,10 @@
+[package]
+name = "tuner"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Resonance display control plane: modes, switching, per-monitor DPI (Win32)"
+
+[dependencies]
+resonance-core.workspace = true
