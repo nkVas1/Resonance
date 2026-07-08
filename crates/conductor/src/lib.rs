@@ -1,58 +1,19 @@
 //! Conductor — the Resonance rules engine.
 //!
-//! Pure decision logic in this crate root (unit-tested); OS watchers that feed
-//! [`SystemState`] live in submodules and are wired up by the app shell.
+//! The rule *data model* lives in `resonance_core::rules` (so config, the UI and
+//! this engine all share one definition). This crate owns the *behavior*: the
+//! observable [`SystemState`], trigger matching, and the decision function.
+//! OS watchers that populate `SystemState` will live in submodules and are
+//! wired up by the app shell (Phase 3).
 //!
 //! Decision model: rules are evaluated by **priority (descending), then
 //! declaration order**. The first rule whose trigger matches the current
 //! system state wins. A manual pin always beats rules.
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum PowerSource {
-    Ac,
-    Battery,
-}
-
-/// What causes a rule to fire.
-#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum Trigger {
-    /// Process is the foreground window (image name, case-insensitive).
-    Foreground(String),
-    /// Process is running anywhere (image name, case-insensitive).
-    Running(String),
-    /// Machine power source.
-    Power(PowerSource),
-}
-
-/// What to restore when the trigger stops matching.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum Restore {
-    /// Return to the state that was active before this rule fired.
-    #[default]
-    OnExit,
-    /// Keep the profile until something else changes it.
-    Manual,
-}
-
-#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
-pub struct Rule {
-    pub name: String,
-    pub trigger: Trigger,
-    /// Profile name from the Resonance config.
-    pub profile: String,
-    #[serde(default)]
-    pub priority: i32,
-    #[serde(default)]
-    pub restore: Restore,
-}
+pub use resonance_core::rules::{PowerSource, Restore, Rule, Trigger};
 
 /// Snapshot of everything triggers can observe.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SystemState {
     /// Lower-cased image name of the foreground process, e.g. "photoshop.exe".
     pub foreground: Option<String>,
@@ -63,16 +24,15 @@ pub struct SystemState {
     pub pinned_profile: Option<String>,
 }
 
-impl Trigger {
-    pub fn matches(&self, state: &SystemState) -> bool {
-        match self {
-            Trigger::Foreground(image) => state
-                .foreground
-                .as_deref()
-                .is_some_and(|fg| fg.eq_ignore_ascii_case(image)),
-            Trigger::Running(image) => state.running.iter().any(|p| p.eq_ignore_ascii_case(image)),
-            Trigger::Power(source) => state.power == Some(*source),
-        }
+/// Does this trigger fire for the given observed state?
+pub fn trigger_matches(trigger: &Trigger, state: &SystemState) -> bool {
+    match trigger {
+        Trigger::Foreground(image) => state
+            .foreground
+            .as_deref()
+            .is_some_and(|fg| fg.eq_ignore_ascii_case(image)),
+        Trigger::Running(image) => state.running.iter().any(|p| p.eq_ignore_ascii_case(image)),
+        Trigger::Power(source) => state.power == Some(*source),
     }
 }
 
@@ -97,7 +57,7 @@ pub fn decide<'a>(rules: &'a [Rule], state: &'a SystemState) -> Decision<'a> {
     let mut indexed: Vec<(usize, &Rule)> = rules.iter().enumerate().collect();
     indexed.sort_by_key(|(i, r)| (-r.priority, *i));
     for (_, rule) in indexed {
-        if rule.trigger.matches(state) {
+        if trigger_matches(&rule.trigger, state) {
             return Decision::Rule(rule);
         }
     }
@@ -206,8 +166,8 @@ mod tests {
     #[test]
     fn trigger_matching_is_case_insensitive() {
         let s = state();
-        assert!(Trigger::Foreground("PHOTOSHOP.EXE".into()).matches(&s));
-        assert!(Trigger::Running("Steam.exe".into()).matches(&s));
-        assert!(!Trigger::Running("blender.exe".into()).matches(&s));
+        assert!(trigger_matches(&Trigger::Foreground("PHOTOSHOP.EXE".into()), &s));
+        assert!(trigger_matches(&Trigger::Running("Steam.exe".into()), &s));
+        assert!(!trigger_matches(&Trigger::Running("blender.exe".into()), &s));
     }
 }

@@ -1,0 +1,66 @@
+/* Resonance design tokens — dark-first, "standing waves" motif. */
+
+:root {
+  --bg: #0a0c12;
+  --bg-raised: #10131c;
+  --surface: #151926;
+  --line: rgba(140, 152, 180, 0.14);
+  --text: #e9edf6;
+  --muted: #8b93a7;
+  --accent: #7c5cff;
+  --accent-2: #4fd8e0;
+  --danger: #ff5c7a;
+  --ok: #4fe0a3;
+  --radius: 14px;
+  --font:
+    "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system,
+    sans-serif;
+  --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 50% -220px, rgba(124, 92, 255, 0.14), transparent 60%),
+    radial-gradient(900px 420px at 50% 120%, rgba(79, 216, 224, 0.08), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+#app {
+  height: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

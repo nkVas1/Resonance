@@ -1,5 +1,6 @@
 //! Versioned TOML config with schema migration on load.
 
+use crate::rules::Rule;
 use crate::{paths, Profile};
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +14,9 @@ pub struct Config {
     pub confirm_timeout_s: u32,
     #[serde(default)]
     pub profiles: Vec<Profile>,
+    /// Automation rules (evaluated by the conductor). Empty by default.
+    #[serde(default)]
+    pub rules: Vec<Rule>,
 }
 
 fn default_confirm_timeout() -> u32 {
@@ -46,6 +50,7 @@ impl Config {
                     scale: Some(200),
                 },
             ],
+            rules: Vec::new(),
         }
     }
 

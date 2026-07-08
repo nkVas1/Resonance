@@ -9,8 +9,8 @@ node_modules/
 dist/
 .svelte-kit/
 
-# Tauri
-src-tauri/gen/
+# Tauri (generated per-machine; regenerated on build)
+**/src-tauri/gen/
 
 # Scratch / throwaway screenshots (curated shots live in design-archive/)
 .scratch/

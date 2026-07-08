@@ -3,6 +3,7 @@
 pub mod config;
 pub mod guard;
 pub mod paths;
+pub mod rules;
 
 use serde::{Deserialize, Serialize};
 

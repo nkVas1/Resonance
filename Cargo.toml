@@ -5,6 +5,7 @@ members = [
     "crates/tuner",
     "crates/conductor",
     "apps/resctl",
+    "apps/chamber/src-tauri",
     "poc/drs-probe",
 ]
 
