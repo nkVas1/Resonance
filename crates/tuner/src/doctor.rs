@@ -1,13 +1,16 @@
 //! Capability probe: everything Resonance needs to know about this machine,
 //! with honest "why not" diagnostics.
 
-use crate::{display, dpi};
+use crate::vendor::Vendor;
+use crate::{display, dpi, vendor};
 use resonance_core::Mode;
 
 #[derive(Debug)]
 pub struct Report {
     pub adapter: String,
     pub monitor: String,
+    pub vendor: Vendor,
+    pub nvapi_present: bool,
     pub native: (u32, u32),
     pub current: Mode,
     pub current_scale: u32,
@@ -18,6 +21,8 @@ pub struct Report {
 
 pub fn run() -> Result<Report, String> {
     let (adapter, monitor) = display::device_names()?;
+    let vendor = Vendor::detect(&adapter);
+    let nvapi_present = vendor == Vendor::Nvidia && vendor::nvapi_present();
     let native = display::native_resolution()?;
     let current = display::current_mode()?;
     let current_scale = display::current_scale()?;
@@ -39,6 +44,8 @@ pub fn run() -> Result<Report, String> {
     Ok(Report {
         adapter,
         monitor,
+        vendor,
+        nvapi_present,
         native,
         current,
         current_scale,
@@ -49,7 +56,12 @@ pub fn run() -> Result<Report, String> {
 
 impl std::fmt::Display for Report {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "adapter : {}", self.adapter)?;
+        let nvapi = if self.nvapi_present {
+            " · NVAPI present"
+        } else {
+            ""
+        };
+        writeln!(f, "adapter : {} [{}{nvapi}]", self.adapter, self.vendor)?;
         writeln!(
             f,
             "monitor : {} (native {}x{})",
@@ -68,12 +80,10 @@ impl std::fmt::Display for Report {
         if self.above_native.is_empty() {
             writeln!(
                 f,
-                "super-resolution: NO above-native modes exposed by the driver"
+                "super-resolution: none available — no above-native modes exposed"
             )?;
-            writeln!(
-                f,
-                "  hint: enable GPU scaling / DSR in the vendor control panel"
-            )?;
+            writeln!(f, "  enable {}:", self.vendor.feature_name())?;
+            writeln!(f, "  {}", self.vendor.enable_hint())?;
         } else {
             writeln!(
                 f,

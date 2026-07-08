@@ -63,6 +63,9 @@ struct Snapshot {
     guard_pending: bool,
     adapter: String,
     monitor: String,
+    vendor: String,
+    /// Set only when no above-native modes exist: how to enable them for this GPU.
+    enable_hint: Option<String>,
     confirm_timeout: u32,
     profiles: Vec<ProfileView>,
     automation_enabled: bool,
@@ -137,6 +140,17 @@ fn build_snapshot(app: &AppHandle) -> Result<Snapshot, String> {
     let state = tuner::state()?;
     let native = tuner::display::native_resolution()?;
     let (adapter, monitor) = tuner::display::device_names()?;
+    let vendor = tuner::vendor::Vendor::detect(&adapter);
+    let has_above_native = tuner::display::list_modes()
+        .iter()
+        .any(|m| m.width > native.0 || m.height > native.1);
+    let enable_hint = (!has_above_native).then(|| {
+        format!(
+            "Enable {} — {}",
+            vendor.feature_name(),
+            vendor.enable_hint()
+        )
+    });
     let config = Config::load_or_init(native.0, native.1)?;
     let pin = coord.pin.lock().expect("pin lock").clone();
     let cause = coord.cause.lock().expect("cause lock").clone();
@@ -196,6 +210,8 @@ fn build_snapshot(app: &AppHandle) -> Result<Snapshot, String> {
         guard_pending: resonance_core::guard::pending()?.is_some(),
         adapter,
         monitor,
+        vendor: vendor.name().to_string(),
+        enable_hint,
         confirm_timeout: config.confirm_timeout_s,
         profiles,
         automation_enabled: config.automation_enabled,

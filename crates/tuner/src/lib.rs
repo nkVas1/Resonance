@@ -7,6 +7,7 @@
 pub mod display;
 pub mod doctor;
 pub mod dpi;
+pub mod vendor;
 
 use resonance_core::{DisplayState, Mode, Profile};
 

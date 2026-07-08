@@ -36,6 +36,8 @@ export interface Snapshot {
   guardPending: boolean;
   adapter: string;
   monitor: string;
+  vendor: string;
+  enableHint: string | null;
   confirmTimeout: number;
   profiles: ProfileView[];
   automationEnabled: boolean;

@@ -80,6 +80,12 @@
     </div>
 
     {#if tab === "display"}
+      {#if snap.enableHint}
+        <div class="hint" role="note">
+          <span class="hint-ic" aria-hidden="true">✦</span>
+          <span>{snap.enableHint}, then reopen Resonance.</span>
+        </div>
+      {/if}
       <Rings
         profiles={snap.profiles}
         {busy}
@@ -286,6 +292,24 @@
 
   .unpin:hover {
     filter: brightness(1.15);
+  }
+
+  .hint {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent-2) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-2) 26%, transparent);
+  }
+
+  .hint-ic {
+    color: var(--accent-2);
+    flex-shrink: 0;
   }
 
   .state {
