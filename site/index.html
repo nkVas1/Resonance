@@ -1,0 +1,1307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Resonance — super-resolution for your entire Windows desktop. Render beyond your panel's native resolution, everywhere, not just in games." />
+  <meta property="og:title" content="Resonance — Super-resolution for your whole desktop" />
+  <meta property="og:description" content="Render beyond your panel, everywhere. Driver-first system-wide super-resolution with DPI compensation and per-app automation." />
+<title>Resonance — Super-resolution for your whole desktop</title>
+</head>
+<body>
+<style>
+  :root {
+    --bg: #0a0c12;
+    --bg-raised: #10131c;
+    --surface: #151926;
+    --surface-2: #1a1f30;
+    --line: rgba(140, 152, 180, 0.14);
+    --line-strong: rgba(140, 152, 180, 0.28);
+    --text: #e9edf6;
+    --text-dim: #b7becd;
+    --muted: #8b93a7;
+    --accent: #7c5cff;
+    --accent-soft: rgba(124, 92, 255, 0.14);
+    --cyan: #4fd8e0;
+    --ok: #4fe0a3;
+    --warn: #ffc75c;
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "Cascadia Code", "Cascadia Mono", ui-monospace, "SF Mono", "Consolas", monospace;
+    --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --maxw: 1080px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f4f5f9;
+      --bg-raised: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #f0f1f7;
+      --line: rgba(40, 48, 70, 0.12);
+      --line-strong: rgba(40, 48, 70, 0.22);
+      --text: #171a24;
+      --text-dim: #3c4356;
+      --muted: #626a7e;
+      --accent: #6a45ff;
+      --accent-soft: rgba(106, 69, 255, 0.1);
+      --cyan: #1198a4;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f4f5f9;
+    --bg-raised: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f0f1f7;
+    --line: rgba(40, 48, 70, 0.12);
+    --line-strong: rgba(40, 48, 70, 0.22);
+    --text: #171a24;
+    --text-dim: #3c4356;
+    --muted: #626a7e;
+    --accent: #6a45ff;
+    --accent-soft: rgba(106, 69, 255, 0.1);
+    --cyan: #1198a4;
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0a0c12;
+    --bg-raised: #10131c;
+    --surface: #151926;
+    --surface-2: #1a1f30;
+    --line: rgba(140, 152, 180, 0.14);
+    --line-strong: rgba(140, 152, 180, 0.28);
+    --text: #e9edf6;
+    --text-dim: #b7becd;
+    --muted: #8b93a7;
+    --accent: #7c5cff;
+    --accent-soft: rgba(124, 92, 255, 0.14);
+    --cyan: #4fd8e0;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--display);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  .mono {
+    font-family: var(--mono);
+    font-feature-settings: "ss01";
+  }
+
+  /* ---------- top bar ---------- */
+  header.bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .bar-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 60px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    font-size: 17px;
+  }
+
+  .eq {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 20px;
+  }
+
+  .eq span {
+    width: 3px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--accent), var(--cyan));
+    animation: eq 1.7s var(--ease-out) infinite;
+  }
+
+  .eq span:nth-child(1) { height: 11px; animation-delay: 0s; }
+  .eq span:nth-child(2) { height: 20px; animation-delay: 0.18s; }
+  .eq span:nth-child(3) { height: 14px; animation-delay: 0.34s; }
+
+  @keyframes eq {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.5); }
+  }
+
+  .bar nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    font-size: 14px;
+  }
+
+  .bar nav a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .bar nav a:hover {
+    color: var(--text);
+  }
+
+  .ghost-btn {
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 15px;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.2s var(--ease-out);
+  }
+
+  .ghost-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    transition: all 0.2s;
+  }
+
+  .theme-toggle:hover {
+    color: var(--text);
+    border-color: var(--line-strong);
+  }
+
+  .nav-hide {
+    display: none;
+  }
+
+  @media (min-width: 720px) {
+    .nav-hide {
+      display: inline;
+    }
+  }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    padding: 76px 0 40px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  #rings {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    border: 1px solid color-mix(in srgb, var(--cyan) 40%, transparent);
+    background: color-mix(in srgb, var(--cyan) 8%, transparent);
+    padding: 6px 13px;
+    border-radius: 999px;
+    margin-bottom: 26px;
+  }
+
+  .eyebrow .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: blink 2.4s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0.35; }
+  }
+
+  h1 {
+    font-size: clamp(2.6rem, 7vw, 5rem);
+    line-height: 1.02;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+    margin-bottom: 22px;
+  }
+
+  h1 .grad {
+    background: linear-gradient(105deg, var(--accent) 10%, var(--cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lede {
+    max-width: 620px;
+    margin: 0 auto 34px;
+    font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+    color: var(--text-dim);
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px 24px;
+    border-radius: 11px;
+    text-decoration: none;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), #5f8bff);
+    box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+    transition: transform 0.2s var(--ease-spring), filter 0.2s;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 13px 22px;
+    border-radius: 11px;
+    text-decoration: none;
+    color: var(--text);
+    border: 1px solid var(--line-strong);
+    transition: all 0.2s var(--ease-out);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  /* ---------- comparison ---------- */
+  section {
+    padding: 60px 0;
+  }
+
+  .section-head {
+    max-width: 640px;
+    margin-bottom: 38px;
+  }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  h2 {
+    font-size: clamp(1.8rem, 4vw, 2.7rem);
+    line-height: 1.08;
+    font-weight: 680;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+    margin-bottom: 16px;
+  }
+
+  .section-head p {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+  }
+
+  .compare {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    background: #05060a;
+    aspect-ratio: 16 / 9;
+    max-height: 520px;
+    cursor: ew-resize;
+    user-select: none;
+    touch-action: none;
+  }
+
+  #compareCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--cyan), var(--accent));
+    box-shadow: 0 0 16px color-mix(in srgb, var(--cyan) 60%, transparent);
+    transform: translateX(-1px);
+    pointer-events: none;
+  }
+
+  .divider .knob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--bg-raised);
+    border: 2px solid var(--cyan);
+    display: grid;
+    place-items: center;
+    color: var(--cyan);
+    font-size: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .compare-tag {
+    position: absolute;
+    top: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    padding: 5px 11px;
+    border-radius: 7px;
+    background: rgba(6, 8, 13, 0.7);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--line);
+    pointer-events: none;
+  }
+
+  .compare-tag.left { left: 16px; color: var(--muted); }
+  .compare-tag.right { right: 16px; color: var(--cyan); }
+
+  .compare-hint {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ---------- flow ---------- */
+  .flow {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 780px) {
+    .flow {
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: stretch;
+    }
+  }
+
+  .flow-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+    position: relative;
+  }
+
+  .flow-card .n {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  .flow-card h3 {
+    font-size: 1.15rem;
+    font-weight: 620;
+    margin: 8px 0 7px;
+    letter-spacing: -0.01em;
+  }
+
+  .flow-card p {
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .flow-arrow {
+    display: grid;
+    place-items: center;
+    color: var(--line-strong);
+    font-size: 22px;
+  }
+
+  @media (max-width: 779px) {
+    .flow-arrow {
+      transform: rotate(90deg);
+      height: 24px;
+    }
+  }
+
+  .res-pill {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--cyan);
+    display: inline-block;
+    margin-top: 10px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--cyan) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cyan) 25%, transparent);
+  }
+
+  /* ---------- planes ---------- */
+  .planes {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 720px) {
+    .planes {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .plane {
+    background: linear-gradient(180deg, var(--surface), var(--bg-raised));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 26px;
+    transition: transform 0.3s var(--ease-out), border-color 0.3s;
+  }
+
+  .plane:hover {
+    transform: translateY(-4px);
+    border-color: var(--line-strong);
+  }
+
+  .plane .sigil {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 16px;
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  .plane .sigil svg {
+    width: 22px;
+    height: 22px;
+    stroke: var(--accent);
+    fill: none;
+    stroke-width: 1.6;
+  }
+
+  .plane h3 {
+    font-size: 1.2rem;
+    font-weight: 640;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+
+  .plane .role {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .plane p {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  /* ---------- comparison table ---------- */
+  .versus {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .versus-scroll {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 560px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.94rem;
+  }
+
+  thead th {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  thead th:first-child {
+    color: var(--text);
+  }
+
+  thead th.us {
+    color: var(--accent);
+  }
+
+  tbody td:first-child {
+    color: var(--text-dim);
+  }
+
+  td.mark {
+    text-align: center;
+    font-size: 1.05rem;
+  }
+
+  td.yes { color: var(--ok); }
+  td.no { color: var(--muted); opacity: 0.6; }
+  td.partial { color: var(--warn); }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .col-us {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+
+  /* ---------- roadmap ---------- */
+  .road {
+    display: grid;
+    gap: 12px;
+  }
+
+  .phase {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 18px;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+  }
+
+  .phase .idx {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    width: 30px;
+  }
+
+  .phase .body h4 {
+    font-size: 1.02rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .phase .body p {
+    color: var(--muted);
+    font-size: 0.88rem;
+  }
+
+  .status {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .status.done {
+    color: var(--ok);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent);
+  }
+
+  .status.active {
+    color: var(--cyan);
+    background: color-mix(in srgb, var(--cyan) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent);
+  }
+
+  .status.next {
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line);
+  }
+
+  /* ---------- requirements ---------- */
+  .req-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 640px) {
+    .req-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .req {
+    display: flex;
+    gap: 14px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+  }
+
+  .req .ic {
+    font-size: 20px;
+    line-height: 1.4;
+  }
+
+  .req h4 {
+    font-size: 0.98rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .req p {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+
+  /* ---------- footer ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0 60px;
+    margin-top: 30px;
+  }
+
+  .foot-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  footer .muted {
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-family: var(--mono);
+  }
+
+  .disclaimer {
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    max-width: 720px;
+    opacity: 0.8;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+</style>
+
+<header class="bar">
+  <div class="wrap bar-inner">
+    <div class="logo">
+      <div class="eq" aria-hidden="true"><span></span><span></span><span></span></div>
+      Resonance
+    </div>
+    <nav>
+      <a class="nav-hide" href="#demo">Demo</a>
+      <a class="nav-hide" href="#how">How</a>
+      <a class="nav-hide" href="#planes">Architecture</a>
+      <a class="nav-hide" href="#roadmap">Roadmap</a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">◐</button>
+      <a class="ghost-btn" href="https://github.com/nkVas1/Resonance" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <canvas id="rings" aria-hidden="true"></canvas>
+    <div class="wrap hero-content">
+      <div class="eyebrow"><span class="dot"></span> Super-resolution · everywhere</div>
+      <h1>Render <span class="grad">beyond your panel.</span><br />Not just in games.</h1>
+      <p class="lede">
+        Your GPU can draw the whole desktop at 4K and downsample it back to your
+        1080p monitor — text, browser, apps, everything sharper. Resonance turns
+        that hidden driver power into one click, with automatic scaling and per-app rules.
+      </p>
+      <div class="cta-row">
+        <a class="btn-primary" href="https://github.com/nkVas1/Resonance" target="_blank" rel="noopener">
+          Star on GitHub
+          <span aria-hidden="true">→</span>
+        </a>
+        <a class="btn-secondary" href="#demo">See it in action</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo" class="wrap">
+    <div class="section-head">
+      <div class="kicker">The difference, live</div>
+      <h2>Same pixels, sampled twice</h2>
+      <p>Drag the seam. Left is your panel drawing at native resolution. Right is the
+        same frame rendered above-native and downsampled — the way Resonance shows it.</p>
+    </div>
+    <div class="compare" id="compare">
+      <canvas id="compareCanvas"></canvas>
+      <div class="compare-tag left">NATIVE 1080p</div>
+      <div class="compare-tag right">RESONANCE ↑2160p</div>
+      <div class="divider" id="divider">
+        <div class="knob" aria-hidden="true">⇄</div>
+      </div>
+    </div>
+    <p class="compare-hint">↔ drag to compare · rendered in real time on your GPU</p>
+  </section>
+
+  <section id="how" class="wrap">
+    <div class="section-head">
+      <div class="kicker">How it works</div>
+      <h2>Driver-first, not screen capture</h2>
+      <p>The operating system genuinely composites everything at a higher resolution.
+        No per-window capture, no overlay latency — the whole screen benefits at once.</p>
+    </div>
+    <div class="flow">
+      <div class="flow-card">
+        <div class="n">01 · OS</div>
+        <h3>Everything renders high</h3>
+        <p>Desktop, browser, apps and games composite at a virtual resolution above what your monitor reports.</p>
+        <span class="res-pill">2880×1620 / 3840×2160</span>
+      </div>
+      <div class="flow-arrow" aria-hidden="true">→</div>
+      <div class="flow-card">
+        <div class="n">02 · GPU</div>
+        <h3>Downsample in hardware</h3>
+        <p>The driver's high-quality filter (13-tap Gaussian, or an AI DLDSR kernel) shrinks it to fit the panel.</p>
+        <span class="res-pill">DSR · DLDSR · VSR</span>
+      </div>
+      <div class="flow-arrow" aria-hidden="true">→</div>
+      <div class="flow-card">
+        <div class="n">03 · PANEL</div>
+        <h3>Native signal, more detail</h3>
+        <p>Your monitor still receives its native 1080p — but every edge and glyph carries supersampled clarity.</p>
+        <span class="res-pill">1920×1080 · sharper</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="planes" class="wrap">
+    <div class="section-head">
+      <div class="kicker">Architecture</div>
+      <h2>Three planes in concert</h2>
+      <p>A Rust core drives the hardware; a designed control center makes it effortless.
+        The name is the metaphor — native at the center, resolutions orbiting like harmonics.</p>
+    </div>
+    <div class="planes">
+      <div class="plane">
+        <div class="sigil" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 12h4l2-6 4 12 2-6h4"/></svg>
+        </div>
+        <h3>Tuner</h3>
+        <div class="role">Control plane · Rust</div>
+        <p>Talks to NVAPI, switches display modes, and compensates DPI so text stays the
+          same physical size — just crisper. Every switch is guarded by a crash-safe revert timer.</p>
+      </div>
+      <div class="plane">
+        <div class="sigil" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>
+        </div>
+        <h3>Conductor</h3>
+        <div class="role">Automation · Rust</div>
+        <p>Declarative rules watch the foreground app and power source. Open Photoshop → DLDSR
+          engages. Unplug the charger → back to native. You stop thinking about it.</p>
+      </div>
+      <div class="plane">
+        <div class="sigil" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h3>Chamber</h3>
+        <div class="role">Control center · Tauri + Svelte</div>
+        <p>A tray-resident window with a harmonic-ring selector and spring-physics motion.
+          A guided onboarding detects your GPU and walks you through the first switch safely.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-head">
+      <div class="kicker">Why a new tool</div>
+      <h2>What the alternatives can't do</h2>
+      <p>Existing tools upscale a single captured window. Resonance raises the real
+        resolution of the whole system — and adds the workflow nobody built.</p>
+    </div>
+    <div class="versus">
+      <div class="versus-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th>NVIDIA Panel</th>
+              <th>Magpie</th>
+              <th>Lossless Scaling</th>
+              <th class="us">Resonance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>System-wide (desktop &amp; all apps)</td>
+              <td class="mark partial">◑</td>
+              <td class="mark no">✕</td>
+              <td class="mark no">✕</td>
+              <td class="mark yes col-us">✓</td>
+            </tr>
+            <tr>
+              <td>True above-native rendering</td>
+              <td class="mark yes">✓</td>
+              <td class="mark no">✕</td>
+              <td class="mark no">✕</td>
+              <td class="mark yes col-us">✓</td>
+            </tr>
+            <tr>
+              <td>Automatic DPI compensation</td>
+              <td class="mark no">✕</td>
+              <td class="mark no">✕</td>
+              <td class="mark no">✕</td>
+              <td class="mark yes col-us">✓</td>
+            </tr>
+            <tr>
+              <td>Per-app automation</td>
+              <td class="mark no">✕</td>
+              <td class="mark partial">◑</td>
+              <td class="mark no">✕</td>
+              <td class="mark yes col-us">✓</td>
+            </tr>
+            <tr>
+              <td>One-click / hotkey switching</td>
+              <td class="mark no">✕</td>
+              <td class="mark yes">✓</td>
+              <td class="mark yes">✓</td>
+              <td class="mark yes col-us">✓</td>
+            </tr>
+            <tr>
+              <td>Crash-safe auto-revert</td>
+              <td class="mark no">✕</td>
+              <td class="mark no">✕</td>
+              <td class="mark no">✕</td>
+              <td class="mark yes col-us">✓</td>
+            </tr>
+            <tr>
+              <td>Free &amp; open source</td>
+              <td class="mark yes">✓</td>
+              <td class="mark yes">✓</td>
+              <td class="mark no">✕</td>
+              <td class="mark yes col-us">✓</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="roadmap" class="wrap">
+    <div class="section-head">
+      <div class="kicker">Roadmap</div>
+      <h2>Built in phases, runnable at every step</h2>
+      <p>The full driver chain is already proven on real hardware. The engine and CLI work today.</p>
+    </div>
+    <div class="road">
+      <div class="phase">
+        <div class="idx mono">0</div>
+        <div class="body">
+          <h4>Proof of concept</h4>
+          <p>NVAPI probe, mode switching, DPI control — verified end-to-end on RTX 3060 Ti.</p>
+        </div>
+        <div class="status done">Shipped</div>
+      </div>
+      <div class="phase">
+        <div class="idx mono">1</div>
+        <div class="body">
+          <h4>Core engine &amp; CLI</h4>
+          <p>Guarded switching, harmonic profiles, capability doctor, continuous integration.</p>
+        </div>
+        <div class="status done">Shipped</div>
+      </div>
+      <div class="phase">
+        <div class="idx mono">2</div>
+        <div class="body">
+          <h4>Chamber — the control center</h4>
+          <p>Tray-first Tauri app, harmonic-ring UI, onboarding, live revert countdown.</p>
+        </div>
+        <div class="status active">In progress</div>
+      </div>
+      <div class="phase">
+        <div class="idx mono">3</div>
+        <div class="body">
+          <h4>Conductor — automation</h4>
+          <p>Process &amp; power watchers, per-app profiles, global hotkeys.</p>
+        </div>
+        <div class="status next">Next</div>
+      </div>
+      <div class="phase">
+        <div class="idx mono">4</div>
+        <div class="body">
+          <h4>Beyond NVIDIA</h4>
+          <p>AMD VSR, Intel scaling, and a driver-side quality plane for DLDSR filters.</p>
+        </div>
+        <div class="status next">Planned</div>
+      </div>
+      <div class="phase">
+        <div class="idx mono">5</div>
+        <div class="body">
+          <h4>Release &amp; polish</h4>
+          <p>One-step installer, auto-update, localization, accessibility, docs site.</p>
+        </div>
+        <div class="status next">Planned</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="req" class="wrap">
+    <div class="section-head">
+      <div class="kicker">Requirements</div>
+      <h2>What you need</h2>
+    </div>
+    <div class="req-grid">
+      <div class="req">
+        <div class="ic" aria-hidden="true">🪟</div>
+        <div>
+          <h4>Windows 11</h4>
+          <p>Windows 10 21H2+ supported on a best-effort basis.</p>
+        </div>
+      </div>
+      <div class="req">
+        <div class="ic" aria-hidden="true">🎛️</div>
+        <div>
+          <h4>NVIDIA GPU with DSR</h4>
+          <p>GTX 900-series or newer. DLDSR needs RTX (20-series+). AMD &amp; Intel coming.</p>
+        </div>
+      </div>
+      <div class="req">
+        <div class="ic" aria-hidden="true">🖥️</div>
+        <div>
+          <h4>Headroom to spare</h4>
+          <p>Rendering at 4× the pixels costs GPU. Best on a card faster than your panel demands.</p>
+        </div>
+      </div>
+      <div class="req">
+        <div class="ic" aria-hidden="true">🆓</div>
+        <div>
+          <h4>Nothing else</h4>
+          <p>No account, no subscription, no telemetry. MIT-licensed, forever.</p>
+        </div>
+      </div>
+    </div>
+    <p class="disclaimer">
+      Resonance is an independent open-source project. DSR, DLDSR and NVAPI are technologies
+      and trademarks of NVIDIA Corporation; VSR of AMD. This project is not affiliated with or
+      endorsed by either. Above-native rendering increases GPU load and, at non-integer factors,
+      can soften some content — Resonance recommends integer and DL factors, and always offers a
+      one-key return to native.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="logo">
+      <div class="eq" aria-hidden="true"><span></span><span></span><span></span></div>
+      Resonance
+    </div>
+    <span class="muted">MIT © 2026 nkVas1 · Rust · Tauri · Svelte</span>
+    <a class="ghost-btn" href="https://github.com/nkVas1/Resonance" target="_blank" rel="noopener">github.com/nkVas1/Resonance ↗</a>
+  </div>
+</footer>
+
+<script>
+  // ---------- theme toggle ----------
+  const root = document.documentElement;
+  const toggle = document.getElementById("themeToggle");
+  toggle.addEventListener("click", () => {
+    const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    const current = root.dataset.theme || (dark ? "dark" : "light");
+    root.dataset.theme = current === "dark" ? "light" : "dark";
+    drawRings();
+    drawCompare();
+  });
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cssVar = (n) => getComputedStyle(root).getPropertyValue(n).trim();
+
+  // ---------- hero rings (standing waves) ----------
+  const ringCanvas = document.getElementById("rings");
+  const rctx = ringCanvas.getContext("2d");
+  let rw = 0, rh = 0, dpr = Math.min(devicePixelRatio || 1, 2);
+
+  function sizeRings() {
+    const r = ringCanvas.getBoundingClientRect();
+    rw = r.width; rh = r.height;
+    ringCanvas.width = rw * dpr;
+    ringCanvas.height = rh * dpr;
+    rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function drawRings(t = 0) {
+    if (!rw) return;
+    rctx.clearRect(0, 0, rw, rh);
+    const cx = rw / 2, cy = rh * 0.42;
+    const accent = cssVar("--accent");
+    const cyan = cssVar("--cyan");
+    const maxR = Math.max(rw, rh) * 0.62;
+    // concentric standing-wave rings
+    for (let i = 0; i < 26; i++) {
+      const phase = t * 0.0004;
+      const base = (i / 26);
+      const r = base * maxR + Math.sin(phase * 2 + i * 0.5) * 6;
+      const alpha = (1 - base) * 0.16 * (0.7 + 0.3 * Math.sin(phase * 3 + i * 0.4));
+      rctx.beginPath();
+      rctx.arc(cx, cy, r, 0, Math.PI * 2);
+      rctx.strokeStyle = i % 3 === 0
+        ? `rgba(79, 216, 224, ${alpha})`
+        : `rgba(124, 92, 255, ${alpha})`;
+      rctx.lineWidth = i % 3 === 0 ? 1.4 : 1;
+      rctx.stroke();
+    }
+    // emphasized harmonic orbits (native, 1.33x, 1.5x, 2x)
+    const orbits = [0.12, 0.24, 0.34, 0.5];
+    orbits.forEach((o, idx) => {
+      const r = o * maxR;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.0012 + idx);
+      rctx.beginPath();
+      rctx.arc(cx, cy, r, 0, Math.PI * 2);
+      rctx.strokeStyle = idx === 0 ? accent : cyan;
+      rctx.globalAlpha = 0.12 + pulse * 0.12;
+      rctx.lineWidth = 1.6;
+      rctx.stroke();
+      rctx.globalAlpha = 1;
+    });
+    // core glow
+    const g = rctx.createRadialGradient(cx, cy, 0, cx, cy, 90);
+    g.addColorStop(0, "rgba(124,92,255,0.28)");
+    g.addColorStop(1, "rgba(124,92,255,0)");
+    rctx.fillStyle = g;
+    rctx.fillRect(cx - 90, cy - 90, 180, 180);
+  }
+
+  // ---------- native vs resonance comparison ----------
+  const compare = document.getElementById("compare");
+  const cCanvas = document.getElementById("compareCanvas");
+  const cctx = cCanvas.getContext("2d");
+  const divider = document.getElementById("divider");
+  let cw = 0, ch = 0, split = 0.5;
+  // offscreen buffers
+  const hi = document.createElement("canvas");   // full-res
+  const lo = document.createElement("canvas");    // half-res -> upscaled (aliased)
+  const hictx = hi.getContext("2d");
+  const loctx = lo.getContext("2d");
+
+  function paintScene(ctx, W, H, scale) {
+    // scale=1 => full detail; scale=0.5 => render at half then it'll be upscaled
+    const bg = cssVar("--bg") || "#0a0c12";
+    ctx.fillStyle = "#06070c";
+    ctx.fillRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2;
+
+    // concentric fine rings — aliasing shows as jaggies on the left
+    ctx.lineWidth = Math.max(1, 1.2 * scale);
+    for (let i = 1; i < 22; i++) {
+      const r = (i / 22) * Math.min(W, H) * 0.52;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = i % 2 ? "rgba(124,92,255,0.55)" : "rgba(79,216,224,0.5)";
+      ctx.stroke();
+    }
+    // radiating thin spokes — strong aliasing cue
+    ctx.strokeStyle = "rgba(233,237,246,0.35)";
+    ctx.lineWidth = Math.max(1, 1 * scale);
+    for (let a = 0; a < 48; a++) {
+      const ang = (a / 48) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(ang) * W, cy + Math.sin(ang) * H);
+      ctx.stroke();
+    }
+    // crisp label
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `700 ${Math.round(H * 0.16)}px "Segoe UI Variable Display", system-ui, sans-serif`;
+    ctx.fillText("4K", cx, cy - H * 0.02);
+    ctx.font = `500 ${Math.round(H * 0.05)}px "Cascadia Code", monospace`;
+    ctx.fillStyle = "rgba(233,237,246,0.85)";
+    ctx.fillText("resonance", cx, cy + H * 0.13);
+  }
+
+  function sizeCompare() {
+    const r = compare.getBoundingClientRect();
+    cw = r.width; ch = r.height;
+    cCanvas.width = cw * dpr; cCanvas.height = ch * dpr;
+    cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // hi buffer at full device res
+    hi.width = cw * dpr; hi.height = ch * dpr;
+    // lo buffer at ~40% res, then upscaled with smoothing off => visible aliasing
+    const f = 0.4;
+    lo.width = Math.max(2, Math.round(cw * dpr * f));
+    lo.height = Math.max(2, Math.round(ch * dpr * f));
+    hictx.setTransform(1, 0, 0, 1, 0, 0);
+    loctx.setTransform(1, 0, 0, 1, 0, 0);
+    paintScene(hictx, hi.width, hi.height, 1);
+    paintScene(loctx, lo.width, lo.height, 0.4);
+    drawCompare();
+  }
+
+  function drawCompare() {
+    if (!cw) return;
+    cctx.clearRect(0, 0, cw, ch);
+    const seam = cw * split;
+    // right side: crisp full-res
+    cctx.save();
+    cctx.beginPath();
+    cctx.rect(seam, 0, cw - seam, ch);
+    cctx.clip();
+    cctx.drawImage(hi, 0, 0, cw, ch);
+    cctx.restore();
+    // left side: aliased (low-res upscaled, nearest neighbor)
+    cctx.save();
+    cctx.beginPath();
+    cctx.rect(0, 0, seam, ch);
+    cctx.clip();
+    cctx.imageSmoothingEnabled = false;
+    cctx.drawImage(lo, 0, 0, cw, ch);
+    cctx.restore();
+    divider.style.left = `${split * 100}%`;
+  }
+
+  // drag interaction
+  let dragging = false;
+  function setSplit(clientX) {
+    const r = compare.getBoundingClientRect();
+    split = Math.min(0.98, Math.max(0.02, (clientX - r.left) / r.width));
+    drawCompare();
+  }
+  compare.addEventListener("pointerdown", (e) => { dragging = true; setSplit(e.clientX); compare.setPointerCapture(e.pointerId); });
+  compare.addEventListener("pointermove", (e) => { if (dragging) setSplit(e.clientX); });
+  compare.addEventListener("pointerup", () => { dragging = false; });
+  compare.addEventListener("pointercancel", () => { dragging = false; });
+
+  // ---------- animation loop ----------
+  let start = 0;
+  function loop(ts) {
+    if (!start) start = ts;
+    drawRings(ts - start);
+    if (!reduced) requestAnimationFrame(loop);
+  }
+
+  function init() {
+    sizeRings();
+    sizeCompare();
+    if (reduced) { drawRings(1200); }
+    else requestAnimationFrame(loop);
+  }
+
+  addEventListener("resize", () => { sizeRings(); sizeCompare(); });
+  init();
+</script>
+</body>
+</html>

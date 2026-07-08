@@ -9,8 +9,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    name: fmt · clippy · test · build
+  check:
+    name: fmt · clippy · test
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,9 +39,9 @@ jobs:
 
       - name: rustfmt
         run: cargo fmt --all --check
+      # clippy --all-targets compiles the whole workspace, so it doubles as the
+      # build check — no separate (slow, LTO) release build needed on every push.
       - name: clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: test
         run: cargo test --workspace
-      - name: build (release)
-        run: cargo build --workspace --release

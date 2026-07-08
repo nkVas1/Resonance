@@ -2,7 +2,9 @@
 
 > Phases follow the "runnable at every boundary" rule: each phase ends with something you can launch and use. Estimates assume part-time development; treat them as sequencing, not deadlines.
 
-## Phase 0 — Research & Proof of Concept 🔬 *(current)*
+**Progress:** Phases 0–4 ✅ complete · Phase 5 🚧 in progress. Per-phase results are in [CHANGELOG.md](../CHANGELOG.md); the checklists below are the original plan.
+
+## Phase 0 — Research & Proof of Concept ✅
 
 Goal: prove the entire driver-first chain end-to-end on real hardware (RTX 3060 Ti, 1080p panel) before writing a single line of product code.
 
@@ -15,7 +17,7 @@ Goal: prove the entire driver-first chain end-to-end on real hardware (RTX 3060 
 
 **Exit criteria:** one-command supersampled desktop on the dev machine, documented.
 
-## Phase 1 — Core Engine ⚙️
+## Phase 1 — Core Engine ✅
 
 Goal: production-quality Rust core + CLI. Everything Resonance will ever do, scriptable.
 
@@ -31,7 +33,7 @@ Goal: production-quality Rust core + CLI. Everything Resonance will ever do, scr
 
 **Exit criteria:** `resctl switch dldsr-2.25x` works reliably with safety revert; `resctl doctor` explains capability on any machine.
 
-## Phase 2 — Chamber: App Shell & UI 🎨
+## Phase 2 — Chamber: App Shell & UI ✅
 
 Goal: the designed, animated control center. First public screenshots.
 
@@ -45,7 +47,7 @@ Goal: the designed, animated control center. First public screenshots.
 
 **Exit criteria:** a non-technical user can install a dev build, run the wizard, and live in super-resolution daily.
 
-## Phase 3 — Conductor: Automation 🤖
+## Phase 3 — Conductor: Automation ✅
 
 Goal: Resonance manages itself; the user stops thinking about it.
 
@@ -58,7 +60,7 @@ Goal: Resonance manages itself; the user stops thinking about it.
 
 **Exit criteria:** demo scenario — open Photoshop → DLDSR engages; switch to battery → native; close app → restored. Zero manual input.
 
-## Phase 4 — Beyond NVIDIA 🧩
+## Phase 4 — Beyond NVIDIA ✅ (foundation)
 
 Goal: widen hardware support; add the capture plane as a complement, not a rewrite.
 
@@ -69,7 +71,7 @@ Goal: widen hardware support; add the capture plane as a complement, not a rewri
 
 **Exit criteria:** meaningful feature set on at least one non-NVIDIA test config; clear capability matrix in README.
 
-## Phase 5 — Release & Polish 🚀
+## Phase 5 — Release & Polish 🚧 (current)
 
 Goal: v1.0 on GitHub Releases; installable in one step, updatable in zero.
 
